@@ -10,6 +10,7 @@ import pandas as pd
 
 student_id_list = [1582283,1402365,1386886,1407986,1493884,1482382,1578352,1116735,1484448,
                    1337211,1475699,1727787,1378711,1620340,1398754]
+course_dictionary = {}
 
 user_student_id = '' #get student id from user
 class_type_needed = '' #get class type from user
@@ -40,8 +41,34 @@ def create_dataframe(student_ids):
                                  str(student_id)).json()
         major_list = [json_data['Major1'], json_data['Major2'], json_data['Major3']]
         course_list = list(set(json_data['courses']))
+        for course in course_list:
+            if course not in course_dictionary.keys:
+                course_dictionary[course] = 0
         data_list.append([student_id, major_list, course_list])
     return pd.DataFrame(data=data_list, columns=columns)
+
+def fill_course_dictionary(data):
+    for i in range(0,len(data)):
+        course_list = (data.iloc[i])['course_list']
+        major_list = (data.iloc[i])['major_list']
+        weight = 0
+        major_intersection = set(major_list).intersection(set(user_major_list))
+        if user_major_list[0] in major_intersection:
+            weight += 3
+        if user_major_list[1] in major_intersection:
+            weight += 2
+        if user_major_list[2] in major_intersection:
+            weight += 1
+        for course in course_list:
+            course_dictionary[course] = course_dictionary[course] + weight
+            
+def check_course_prerequisites(course):
+    course_info = requests.get('https://stark-mountain-17519.herokuapp.com/courses/course').json()
+    description = course_info['desc']
+    if 'Prerequisite' not in description:
+        return None
+    else
+    
 
 student_data_frame = create_dataframe(student_id_list)
 
@@ -54,7 +81,9 @@ if new_student:
         if len(set(student_data_frame.iloc[i]['major_list']).intersects(set(user_major_list))) > 0:
             elements_to_keep.append(i)
     student_data_frame = student_data_frame.iloc[elements_to_keep]
-    course_popularity = {}
-    
-    
+    fill_course_dictionary(student_data_frame)
+    #get 6 best courses
+    #check prereqs for each course
+    #output
+
     
