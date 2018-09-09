@@ -32,7 +32,7 @@ if not new_student:
     user_major_list = [user_data['Major1'], user_data['Major2'], user_data['Major3']]
     user_course_list = list(set(user_data['courses']))
 
-#creating the datafraome to use
+#creating the dataframe to use
 def create_dataframe(student_ids):
     data_list = []
     columns = ['student_id', 'major_list', 'course_list']
@@ -62,14 +62,28 @@ def fill_course_dictionary(data):
         for course in course_list:
             course_dictionary[course] = course_dictionary[course] + weight
             
-def check_course_prerequisites(course):
-    course_info = requests.get('https://stark-mountain-17519.herokuapp.com/courses/course').json()
-    description = course_info['desc']
-    if 'Prerequisite' not in description:
-        return None
-    else
-    
-
+def return_courses_and_prerequisites(course_list):
+    prerequesite_dict = {}
+    for course in course_list:
+        course_info = requests.get('https://stark-mountain-17519.herokuapp.com/courses/course').json()
+        description = course_info['desc']
+        if 'Prerequisite:' not in description:
+            prerequesite_dict[course_info['dept_abbrev'] + ' ' + course_info['course_number']] = \
+            None
+        else:
+            remaining_string = description.split['Prerequisite: '][1]
+            all_prerequisites = remaining_string.split('; ')
+            last_req = all_prerequisites[len(all_prerequisites) - 1]
+            if 'Instructors' in last_req:
+                all_prerequisites[len(all_prerequisites) - 1] = all_prerequisites[len(all_prerequisites) 
+                - 1].split(' Instructors')[0]
+            elif 'Offered' in last_req:
+                all_prerequisites[len(all_prerequisites) - 1] = all_prerequisites[len(all_prerequisites) 
+                - 1].split(' Offered')[0]
+            prerequesite_dict[course_info['dept_abbrev'] + ' ' + course_info['course_number']] = \
+            all_prerequisites
+        return prerequesite_dict
+            
 student_data_frame = create_dataframe(student_id_list)
 
 major_priority_dict = {user_major_list[1]:3, user_major_list[2]:2, user_major_list[3]:1}
@@ -84,6 +98,4 @@ if new_student:
     fill_course_dictionary(student_data_frame)
     #get 6 best courses
     #check prereqs for each course
-    #output
-
-    
+    #output  
