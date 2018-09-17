@@ -23,7 +23,7 @@ if user_student_id not in student_id_list:
     new_student = True
     #ask for intended majors
     #or direct admit majors
-    user_major_list = input('Enter a comma separated list of majors: ').split(', ') 
+    user_major_list = input('Enter a comma separated list of majors/Intended majors: ').split(', ') 
     for i in range(0, len(user_major_list)):
         if user_major_list[i] == 'None':
             user_major_list[i] = None
@@ -50,7 +50,6 @@ def create_dataframe(student_ids):
         data_list.append([student_id, major_list, course_list])
     return pd.DataFrame(data=data_list, columns=columns)
 
-
 def fill_course_dictionary(data):
     for i in range(0,len(data)):
         course_list = (data.iloc[i])['course_list']
@@ -67,7 +66,7 @@ def fill_course_dictionary(data):
             course_dictionary[course] = course_dictionary[course] + weight
     return course_dictionary
             
-def courses_and_prerequisites(course_list):
+def identify_courses_and_prerequisites(course_list):
     prerequesite_dict = {}
     for course in course_list:
         course_info = requests.get('https://secure-plains-22276.herokuapp.com/courses/' + 
@@ -81,10 +80,12 @@ def courses_and_prerequisites(course_list):
             all_prerequisites = remaining_string.split('; ')
             last_req = all_prerequisites[len(all_prerequisites) - 1]
             if 'Instructors' in last_req:
-                all_prerequisites[len(all_prerequisites) - 1] = all_prerequisites[len(all_prerequisites) 
+                all_prerequisites[len(all_prerequisites) - 1] = all_prerequisites[len(
+                        all_prerequisites) 
                 - 1].split(' Instructors')[0]
             elif 'Offered' in last_req:
-                all_prerequisites[len(all_prerequisites) - 1] = all_prerequisites[len(all_prerequisites) 
+                all_prerequisites[len(all_prerequisites) - 1] = all_prerequisites[len(
+                        all_prerequisites) 
                 - 1].split(' Offered')[0]
             prerequesite_dict[course_info['dept_abbrev'] + ' ' + str(course_info['course_number'])]\
             = all_prerequisites
@@ -96,21 +97,8 @@ def find_best_courses(course_dictionary):
         best_courses.update({key: course_dictionary[key]})
     best_courses = best_courses.keys()
     return best_courses
-            
-student_data_frame = create_dataframe(student_id_list)
 
-major_priority_dict = {user_major_list[0]:3, user_major_list[1]:2, user_major_list[2]:1}
-
-#prediction for new user
-if new_student:
-    elements_to_keep = []
-    for i in range(0, len(student_data_frame)):
-        if len(set(student_data_frame.iloc[i]['major_list']).intersection(set(user_major_list))) > 0:
-            elements_to_keep.append(i)
-    student_data_frame = student_data_frame.iloc[elements_to_keep]
-    course_dictionary = fill_course_dictionary(student_data_frame)
-    best_courses = find_best_courses(course_dictionary)
-    course_info_dict = courses_and_prerequisites(best_courses)
+def print_courses_and_prerequisites(course_info_dict):
     print('Recommended courses are:')
     print()
     for course in course_info_dict.keys():
@@ -123,3 +111,52 @@ if new_student:
             for prerequisite in prerequisite_list:
                 print('\t' + prerequisite)
             print()
+
+student_data_frame = create_dataframe(student_id_list)
+
+major_priority_dict = {user_major_list[0]:3, user_major_list[1]:2, user_major_list[2]:1}
+
+#prediction for new user
+if new_student:
+    elements_to_keep = []
+    for i in range(0, len(student_data_frame)):
+        if len(set(student_data_frame.iloc[i]['major_list']).intersection(set(
+                user_major_list))) > 0:
+            elements_to_keep.append(i)
+    student_data_frame = student_data_frame.iloc[elements_to_keep]
+    course_dictionary = fill_course_dictionary(student_data_frame)
+    best_courses = find_best_courses(course_dictionary)
+    course_info_dict = identify_courses_and_prerequisites(best_courses)
+    print_courses_and_prerequisites(course_info_dict)
+else:
+    test_major_set = set(user_major_list)
+    test_major_set.remove(None)
+    if len(user_course_list) <= 9 and len(test_major_set) < 1:
+        user_major_list = input('Enter a comma separated list of majors/Intended majors: ').\
+        split(', ') 
+        for i in range(0, len(user_major_list)):
+            if user_major_list[i] == 'None':
+                user_major_list[i] = None
+        elements_to_keep = []
+        for i in range(0, len(student_data_frame)):
+            if len(set(student_data_frame.iloc[i]['major_list']).intersection(set(
+                    user_major_list))) > 0:
+                elements_to_keep.append(i)
+        student_data_frame = student_data_frame.iloc[elements_to_keep]
+        course_dictionary = fill_course_dictionary(student_data_frame)
+        best_courses = find_best_courses(course_dictionary)
+        course_info_dict = identify_courses_and_prerequisites(best_courses)
+        print_courses_and_prerequisites(course_info_dict)
+    elif len(user_course_list) <= 9 and len(test_major_set) >= 1:
+        elements_to_keep = []
+        for i in range(0, len(student_data_frame)):
+            if len(set(student_data_frame.iloc[i]['major_list']).intersection(set(
+                    user_major_list))) > 0:
+                elements_to_keep.append(i)
+        student_data_frame = student_data_frame.iloc[elements_to_keep]
+        #use clustering algo to identify closest courses.
+        
+    elif len(user_course_list) > 9 and len(test_major_set) < 1:
+        print()
+    else:
+        print()
